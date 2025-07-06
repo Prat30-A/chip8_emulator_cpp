@@ -29,4 +29,9 @@ class Chip8{
         uint8_t keypad[16]{};
     //loadrom function to open a .ch8 file
         bool load_ROM(const string& filename);
+    //fetch the opcode
+        uint16_t fetchOpcode();
+    //clear screen OPCODE
+        uint16_t OP_00E0();
+        
 };
