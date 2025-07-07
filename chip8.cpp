@@ -3,6 +3,7 @@
 #include <cstring>
 #include <fstream>
 #include <vector>
+#include <cstdlib>
 
 using namespace std;
 
@@ -85,10 +86,338 @@ bool Chip8::load_ROM(const string& filename){
 
 uint16_t Chip8::fetchOpcode(){
     // Shift the first byte to the high 8 bits and OR with the next byte
-    uint16_t opcode = (memory[PC] << 8) | memory[PC+1];
+    opcode = (memory[PC] << 8) | memory[PC+1];
 
     //Move to the next instruction as each instruction is 2 bytes 
     PC += 2;
     return opcode;
 }
 
+//opcode for clearing display
+void Chip8::OP_00E0(){
+    memset(display,0,sizeof(display));
+}
+
+void Chip8::OP_00EE(){
+    //decrement stack ptr
+    SP--;
+    //set PC to the new SP
+    PC = stack[SP];
+}
+
+//opcode to jump to the NNN address
+void Chip8::OP_1NNN(){
+    //get the lower 12 bits 
+    uint16_t address = opcode & 0x0FFF;
+    //Set the PC to the jump address
+    PC = address;
+}
+
+//opcode to call subroutine at NNN
+void Chip8::OP_2NNN(){
+    //save the return address on the stack
+    stack[SP] = PC;
+    //move to a next stack position
+    SP++;
+    //set PC as the address of NNN
+    PC = opcode & 0x0FFF;
+}
+
+void Chip8::OP_3XNN(){
+    //Extract NN
+    uint8_t NN = (opcode & 0x00FF);
+    //Extract X from opcode, shift right 
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    if (V[X] == NN){
+        PC+=2; //skip the next instruction
+    }
+}
+
+void Chip8::OP_4XNN(){
+    //Extract NN
+    uint8_t NN = (opcode & 0x00FF);
+
+    //Extract X from opcode, shift right
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    if (V[X] != NN){
+        PC+=2; //skip the next instruction
+    }
+}
+
+void Chip8::OP_5XY0(){
+    //Extract X from opcode and shift right 8 bits
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //Extract Y from opcode and shift right 4 bits
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+
+    if(V[X] == V[Y]){
+        PC+=2;
+    }
+}
+
+void Chip8::OP_6XNN(){
+    //Extract X
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //Extract NN
+    uint8_t NN = opcode & 0x00FF;
+    //set V[x] to NN
+    V[X] = NN;
+}
+
+void Chip8::OP_7XNN(){
+    //Extract X
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //Extract NN
+    uint8_t NN = opcode & 0x00FF;
+    //Add V[X] to NN
+    V[X] += NN;
+}
+
+void Chip8::OP_8XY0(){
+    //Extract X
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //Extract Y 
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+    //set Vx to Vy
+    V[X] = V[Y];
+}
+
+void Chip8::OP_8XY1(){
+    //Extract X
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //Extract Y
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+    //set Vx to either Vx to Vy
+    V[X] = V[X] | V[Y];
+}
+
+void Chip8::OP_8XY2(){
+    //Extract X
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //Extract Y
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+    //set Vx and Vy
+    V[X] = V[X] & V[Y];
+}
+
+void Chip8::OP_8XY3(){
+    //Extract X
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //Extract Y
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+    //set Vx to Vx XOR Vy
+    V[X] = V[X] ^ V[Y];
+}
+
+void Chip8::OP_8XY4(){
+    //Extract X
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+    //add Vx to Vy and check for overflow
+    uint16_t sum = V[X] + V[Y];
+    if(sum > 255){
+        V[0xF] = 1;
+    }
+    else{
+        V[0xF] = 0;
+    }
+    //after setting V[F] do the addition
+    V[X] = sum & 0xFF;
+}
+
+void Chip8::OP_8XY5(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+    if(V[X] >= V[Y]){
+        V[0xF] = 1;
+    }
+    else{
+        V[0xF] = 0;
+    }
+    V[X] = V[X] - V[Y];
+}
+
+void Chip8::OP_8XY6(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //Find the LSB
+    V[0xF] = V[X] & 0x1;
+    //shift Vx by 1 bit
+    V[X]= V[X] >> 1;
+}
+
+void Chip8::OP_8XY7(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+
+    //check Vy greater than equal to Vx
+    if(V[Y] >= V[X]){
+        //no undeflow
+        V[0xF] = 1;
+    }
+    else{
+        V[0xF] = 0;
+    }
+
+    V[X] = V[Y] - V[X];
+}   
+
+void Chip8::OP_8XYE(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //set VF to VX MSB prior to shift
+    V[0xF] = (V[X] & 0x80) >> 7;
+    //shift VX by 1 bit
+    V[X] = V[X] << 1;
+}
+
+void Chip8::OP_9XY0(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+
+    if (V[X] != V[Y]){
+        PC+=2;
+    }
+}
+
+void Chip8::OP_ANNN(){
+    uint16_t NNN = (opcode & 0x0FFF);
+    index_register = NNN;
+}
+
+void Chip8::OP_BNNN(){
+    uint16_t NNN = (opcode & 0x0FFF);
+    PC = V[0] + NNN;
+}
+
+void Chip8::OP_CXNN(){
+    uint8_t NN = opcode & 0x00FF;
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    V[X] = (rand()%256) & NN;
+}
+
+void Chip8::OP_DXYN(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    uint8_t Y = (opcode & 0x00F0) >> 4;
+    uint8_t N = opcode & 0x000F;
+
+    V[0xF] = 0;
+    //wrap around screen when going out of bounds
+    uint8_t xPos = V[X] % DISPLAY_WIDTH;
+    uint8_t yPos = V[Y] % DISPLAY_HEIGHT;
+
+    // Loop through each row of the sprite (height = N)
+    for (int i = 0; i < N; i++) {
+        // Fetch the i-th byte of the sprite from memory
+        // Each byte represents 8 horizontal pixels (1 row)
+        uint8_t spriteByte = memory[index_register + i];
+
+        // Loop through each of the 8 bits in the sprite byte (width = 8)
+        for (int j = 0; j < 8; j++) {
+            // Extract the j-th bit (pixel) from spriteByte
+            // 0x80 = 10000000, so shifting it right checks each bit one by one
+            uint8_t spritePixel = spriteByte & (0x80 >> j);
+
+            // Calculate the location on the screen to draw this pixel
+            // yPos + i = current row; xPos + j = current column
+            // Multiply row by DISPLAY_WIDTH to map 2D coords into 1D array
+            uint32_t* screenPixel = &display[(yPos + i) * DISPLAY_WIDTH + (xPos + j)];
+
+            // If the sprite pixel is ON 
+            if (spritePixel) {
+                // Check for pixel collision
+                if (*screenPixel == 0xFFFFFFFF) {
+                    // Set VF to 1 to indicate a collision occurred
+                    V[0xF] = 1;
+                }
+
+                // Toggle the screen pixel using XOR 
+                *screenPixel ^= 0xFFFFFFFF;
+            }
+        }
+    }
+}
+
+void Chip8::OP_EX9E(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //if keypad is pressed skip the next instruction
+    if (keypad[V[X]]){
+        PC+=2;
+    }
+}
+
+void Chip8::OP_EXA1(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    if (!keypad[V[X]]){
+        PC+=2;
+    }
+}
+
+void Chip8::OP_FX07(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    V[X] = delay_timer;
+}
+
+void Chip8::OP_FX0A() {
+    uint8_t X = (opcode & 0x0F00) >> 8;
+
+    for (uint8_t key = 0; key < 16; key++) {
+        if (keypad[key]) {
+            V[X] = key;  // Store the key code
+            return;      // Exit once a key is pressed
+        }
+    }
+
+    PC -= 2;  // Roll back the PC so the same opcode is run again
+}
+
+void Chip8::OP_FX15(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+
+    delay_timer = V[X];
+}
+
+void Chip8::OP_FX18(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+
+    sound_timer = V[X];
+}
+
+void Chip8::OP_FX1E(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+
+    index_register += V[X];
+}
+
+void Chip8::OP_FX29(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    //each font character is 5 bytes each
+    index_register = 0x50 + (V[X]*5);
+}
+
+void Chip8::OP_FX33() {
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    uint8_t value = V[X];  // Make a copy so we don't modify V[X]
+
+    // Store the hundreds digit
+    memory[index_register] = value / 100;
+
+    // Store the tens digit
+    memory[index_register + 1] = (value / 10) % 10;
+
+    // Store the ones digit
+    memory[index_register + 2] = value % 10;
+}
+
+void Chip8::OP_FX55(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    for(uint8_t i = 0; i <= X; i++){
+        memory[index_register+i] = V[i];
+    }
+}
+
+void Chip8::OP_FX65(){
+    uint8_t X = (opcode & 0x0F00) >> 8;
+    for(uint8_t i = 0; i <= X; i++){
+        V[i] = memory[index_register+i];
+    }
+}
