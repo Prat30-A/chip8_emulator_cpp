@@ -44,7 +44,7 @@ Original  | Keyboard
 A 0 B F   | Z X C V
 ```
 
-### File Structure
+## File Structure
 chip8_emulator_cpp/
 ├── chip8.hpp / chip8.cpp   ← Core emulator implementation
 ├── main.cpp                ← SDL2 setup and main loop
