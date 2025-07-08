@@ -45,11 +45,14 @@ A 0 B F   | Z X C V
 ```
 
 ## File Structure
-chip8_emulator_cpp/
-├── chip8.hpp / chip8.cpp   ← Core emulator implementation
-├── main.cpp                ← SDL2 setup and main loop
-├── SDL2.dll                ← Runtime dependency for Windows
-├── README.md
+
+    chip8_emulator_cpp/
+    ├── chip8.hpp         # Core emulator implementation header
+    ├── chip8.cpp         # Core emulator implementation source
+    ├── main.cpp          # SDL2 setup and main loop
+    ├── SDL2.dll          # Windows runtime dependency
+    └── README.md         # Project documentation
+
 
 ### Notes
 This emulator is intended for learning and runs best with simple ROMs using the original CHIP-8 spec.
