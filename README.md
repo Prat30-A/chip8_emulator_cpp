@@ -28,6 +28,8 @@ A simple CHIP-8 emulator built using C++ and SDL2. This project helped me learn 
 
 ```bash
 g++ main.cpp chip8.cpp -o chip8.exe -IC:\SDL2-2.32.8\x86_64-w64-mingw32\include -LC:\SDL2-2.32.8\x86_64-w64-mingw32\lib -lmingw32 -lSDL2main -lSDL2
+'''
+'''
 ## Usage
 To run a CHIP-8 ROM:
 ./chip8 path/to/ROM.ch8
