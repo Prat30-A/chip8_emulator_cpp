@@ -35,6 +35,7 @@ g++ main.cpp chip8.cpp -o chip8.exe -IC:\SDL2-2.32.8\x86_64-w64-mingw32\include 
 ```
 ./chip8 path/to/ROM.ch8
 ```
+## Keyboard Mapping:
 ```
 Original  | Keyboard
 ---------------------
