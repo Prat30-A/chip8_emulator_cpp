@@ -105,4 +105,10 @@ class Chip8{
         void OP_FX55();
     //Fills from V0 to VX (including VX) with values from memory
         void OP_FX65();
+    //implement decoder
+        void decodeAndExecute();
+        void updatetimers();
+    //get input
+        void setKeyState(uint8_t key, bool isPressed);
+
 };

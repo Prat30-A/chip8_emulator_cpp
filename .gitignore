@@ -1,3 +1,7 @@
-/build/
-*.exe
-*.o
+build/
+*.ch8
+*.dll
+chip8
+main
+test
+

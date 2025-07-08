@@ -295,47 +295,37 @@ void Chip8::OP_CXNN(){
     V[X] = (rand()%256) & NN;
 }
 
-void Chip8::OP_DXYN(){
+void Chip8::OP_DXYN() {
     uint8_t X = (opcode & 0x0F00) >> 8;
     uint8_t Y = (opcode & 0x00F0) >> 4;
     uint8_t N = opcode & 0x000F;
 
-    V[0xF] = 0;
-    //wrap around screen when going out of bounds
     uint8_t xPos = V[X] % DISPLAY_WIDTH;
     uint8_t yPos = V[Y] % DISPLAY_HEIGHT;
 
-    // Loop through each row of the sprite (height = N)
-    for (int i = 0; i < N; i++) {
-        // Fetch the i-th byte of the sprite from memory
-        // Each byte represents 8 horizontal pixels (1 row)
-        uint8_t spriteByte = memory[index_register + i];
+    V[0xF] = 0;
 
-        // Loop through each of the 8 bits in the sprite byte (width = 8)
-        for (int j = 0; j < 8; j++) {
-            // Extract the j-th bit (pixel) from spriteByte
-            // 0x80 = 10000000, so shifting it right checks each bit one by one
-            uint8_t spritePixel = spriteByte & (0x80 >> j);
+    for (int row = 0; row < N; row++) {
+        uint8_t spriteByte = memory[index_register + row];
 
-            // Calculate the location on the screen to draw this pixel
-            // yPos + i = current row; xPos + j = current column
-            // Multiply row by DISPLAY_WIDTH to map 2D coords into 1D array
-            uint32_t* screenPixel = &display[(yPos + i) * DISPLAY_WIDTH + (xPos + j)];
+        for (int col = 0; col < 8; col++) {
+            if ((spriteByte & (0x80 >> col)) == 0) continue;
 
-            // If the sprite pixel is ON 
-            if (spritePixel) {
-                // Check for pixel collision
-                if (*screenPixel == 0xFFFFFFFF) {
-                    // Set VF to 1 to indicate a collision occurred
-                    V[0xF] = 1;
-                }
+            uint8_t x = (xPos + col) % DISPLAY_WIDTH;
+            uint8_t y = (yPos + row) % DISPLAY_HEIGHT;
+            uint16_t index = y * DISPLAY_WIDTH + x;
 
-                // Toggle the screen pixel using XOR 
-                *screenPixel ^= 0xFFFFFFFF;
+            if (index >= DISPLAY_WIDTH * DISPLAY_HEIGHT) continue;  // Optional safety
+
+            if (display[index] == 1) {
+                V[0xF] = 1;  // Collision
             }
+
+            display[index] ^= 1;  // Toggle pixel (black & white only)
         }
     }
 }
+
 
 void Chip8::OP_EX9E(){
     uint8_t X = (opcode & 0x0F00) >> 8;
@@ -396,16 +386,19 @@ void Chip8::OP_FX29(){
 
 void Chip8::OP_FX33() {
     uint8_t X = (opcode & 0x0F00) >> 8;
-    uint8_t value = V[X];  // Make a copy so we don't modify V[X]
+    uint8_t value = V[X];  // Do not modify V[X]
 
-    // Store the hundreds digit
-    memory[index_register] = value / 100;
+    memory[index_register]     = value / 100;             // Hundreds
+    memory[index_register + 1] = (value / 10) % 10;       // Tens
+    memory[index_register + 2] = value % 10;              // Ones
 
-    // Store the tens digit
-    memory[index_register + 1] = (value / 10) % 10;
-
-    // Store the ones digit
-    memory[index_register + 2] = value % 10;
+    // Debug output
+    std::cout << "FX33: BCD of V[" << +X << "] = " << +value
+              << " -> ["
+              << +memory[index_register] << ", "
+              << +memory[index_register + 1] << ", "
+              << +memory[index_register + 2] << "]"
+              << std::endl;
 }
 
 void Chip8::OP_FX55(){
@@ -420,4 +413,77 @@ void Chip8::OP_FX65(){
     for(uint8_t i = 0; i <= X; i++){
         V[i] = memory[index_register+i];
     }
+}
+
+//implement switch stamenets for each particular opcode case
+void Chip8::decodeAndExecute(){
+    switch (opcode & 0xF000){
+        case 0x0000:
+            switch(opcode & 0x00FF){
+                case 0x00E0: OP_00E0(); break;
+                case 0x00EE: OP_00EE(); break;
+            }
+            break;
+        case 0x1000: OP_1NNN(); break;
+        case 0x2000: OP_2NNN(); break;
+        case 0x3000: OP_3XNN(); break;
+        case 0x4000: OP_4XNN(); break;
+        case 0x5000: OP_5XY0(); break;
+        case 0x6000: OP_6XNN(); break;
+        case 0x7000: OP_7XNN(); break;
+        case 0x8000:
+            switch(opcode & 0x000F){
+                case 0x0000: OP_8XY0(); break;
+                case 0x0001: OP_8XY1(); break;
+                case 0x0002: OP_8XY2(); break;
+                case 0x0003: OP_8XY3(); break;
+                case 0x0004: OP_8XY4(); break;
+                case 0x0005: OP_8XY5(); break;
+                case 0x0006: OP_8XY6(); break;
+                case 0x0007: OP_8XY7(); break;
+                case 0x000E: OP_8XYE(); break;
+            }
+            break;
+        case 0x9000: OP_9XY0(); break;
+        case 0xA000: OP_ANNN(); break;
+        case 0xB000: OP_BNNN(); break;
+        case 0xC000: OP_CXNN(); break;
+        case 0xD000: OP_DXYN(); break;
+        case 0xE000: 
+            switch(opcode & 0x00FF){
+                case 0x009E: OP_EX9E(); break;
+                case 0x00A1: OP_EXA1(); break;
+            }
+            break;
+        case 0xF000:
+            switch(opcode & 0x00FF){
+                case 0x0007: OP_FX07(); break;
+                case 0x000A: OP_FX0A(); break;
+                case 0x0015: OP_FX15(); break;
+                case 0x0018: OP_FX18(); break;
+                case 0x001E: OP_FX1E(); break;
+                case 0x0029: OP_FX29(); break;
+                case 0x0033: OP_FX33(); break;
+                case 0x0055: OP_FX55(); break;
+                case 0x0065: OP_FX65(); break;
+            }
+            break;
+        default:
+            cerr <<"Unknow OPCODE" << hex<< opcode<<endl;
+            break;
+    }
+}
+
+    void Chip8::updatetimers(){
+        if (delay_timer > 0) {
+            --delay_timer;
+        }
+        if (sound_timer > 0) {
+            --sound_timer;
+        }
+
+    }
+
+void Chip8::setKeyState(uint8_t key, bool isPressed) {
+    keypad[key] = isPressed;
 }
