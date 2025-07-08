@@ -55,5 +55,5 @@ A 0 B F   | Z X C V
 ### Notes
 This emulator is intended for learning and runs best with simple ROMs using the original CHIP-8 spec.
 You can replace SDL2 with other rendering/input libraries if you prefer.
-> Tested with WinLibs standalone MinGW-w64 GCC 14.1.0 (UCRT) on Windows.
+> Tested with WinLibs standalone MinGW-w64 GCC 14.1.0 on Windows.
 
