@@ -44,6 +44,7 @@ A 0 B F   | Z X C V
 ## File Structure
 
     chip8_emulator_cpp/
+    ├── roms              #store roms in this file
     ├── chip8.hpp         # Core emulator implementation header
     ├── chip8.cpp         # Core emulator implementation source
     ├── main.cpp          # SDL2 setup and main loop
