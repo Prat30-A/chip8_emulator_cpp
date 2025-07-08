@@ -1,67 +1,58 @@
-cat << 'EOF' > README.md
 # CHIP-8 Emulator (C++ & SDL2)
 
-This is a simple CHIP-8 emulator written in C++ with SDL2 for graphics. I built this project to better understand how emulators work, including memory management, opcode decoding, and real-time input handling.
-
----
+A simple CHIP-8 emulator built using C++ and SDL2. This project helped me learn about system-level programming, emulation, and graphics rendering using a minimal virtual machine.
 
 ## Features
 
 - Full support for standard CHIP-8 opcodes
-- 64x32 pixel monochrome display (scaled up)
-- Basic keyboard input mapped to CHIP-8 keys
-- ROM loading from command line
-- Delay and sound timer implementation
+- 64×32 monochrome display rendered using SDL2
+- Keyboard input mapped to CHIP-8 hex keys
+- Load ROMs via command-line arguments
+- Implements delay and sound timers at 60Hz
+- Compatible with classic CHIP-8 games
 
----
+## Requirements
 
-## Getting Started
+- A C++17-compatible compiler (e.g. `g++`)
+- [SDL2](https://github.com/libsdl-org/SDL/releases) development libraries
+- (Optional) `make` if you prefer using a Makefile for building
 
-### Requirements
+> This project was developed and tested on Windows using MinGW-w64 and SDL2 version 2.32.8.
 
-- g++ with C++17 support
-- SDL2
-- Make
+## Build Instructions
 
-### Build
+### On Windows (MinGW + SDL2)
+1. Download the [SDL2 development library for MinGW-w64](https://github.com/libsdl-org/SDL/release) and extract it.
+2. Make sure your `g++` compiler is installed and added to your system PATH.
+3. Compile using the following command (adjust paths if needed):
 
-Clone the repo and run:
-
-    make
-
-This should build an executable named `chip8`.
-
----
-
+```bash
+g++ main.cpp chip8.cpp -o chip8.exe -IC:\SDL2-2.32.8\x86_64-w64-mingw32\include -LC:\SDL2-2.32.8\x86_64-w64-mingw32\lib -lmingw32 -lSDL2main -lSDL2
 ## Usage
 
-To run a ROM:
+To run a CHIP-8 ROM:
 
-    ./chip8 path/to/ROM.ch8
+```bash
+./chip8 path/to/ROM.ch8
 
-**Note:** ROMs are not included in this repo. 
 
----
+Original  | Keyboard
+---------------------
+1 2 3 C   | 1 2 3 4
+4 5 6 D   | Q W E R
+7 8 9 E   | A S D F
+A 0 B F   | Z X C V
+```
 
-## File Structure
+### File Structure
+chip8_emulator_cpp/
+├── chip8.hpp / chip8.cpp   ← Core emulator implementation
+├── main.cpp                ← SDL2 setup and main loop
+├── SDL2.dll                ← Runtime dependency for Windows
+├── README.md
 
-    chip8_emulator_cpp/
-    ├── chip8.hpp / chip8.cpp   // Core emulator implementation
-    ├── main.cpp                // SDL setup, main loop
-    ├── fontset.hpp             // Built-in font sprites
-    ├── Makefile
-    └── README.md
+### Notes
+This emulator is intended for learning and runs best with simple ROMs using the original CHIP-8 spec.
+You can replace SDL2 with other rendering/input libraries if you prefer.
+> Tested with WinLibs standalone MinGW-w64 GCC 14.1.0 (UCRT) on Windows.
 
----
-
-## Notes
-
-- I used SDL2 for graphics and input. You can swap it out for other backends if needed.
-- This emulator runs best with simpler ROMs designed for the original CHIP-8 spec.
-
----
-
-## License
-
-MIT — feel free to fork and modify.
-EOF
