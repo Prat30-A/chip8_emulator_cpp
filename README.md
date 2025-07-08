@@ -25,16 +25,30 @@ A simple CHIP-8 emulator built using C++ and SDL2. This project helped me learn 
 1. Download the [SDL2 development library for MinGW-w64](https://github.com/libsdl-org/SDL/release) and extract it.
 2. Make sure your `g++` compiler is installed and added to your system PATH.
 3. Compile using the following command (adjust paths if needed):
+## Setup & Usage
 
-```bash
-g++ main.cpp chip8.cpp -o chip8.exe -IC:\SDL2-2.32.8\x86_64-w64-mingw32\include -LC:\SDL2-2.32.8\x86_64-w64-mingw32\lib -lmingw32 -lSDL2main -lSDL2
-```
+1. **Fork & Clone**  
+   Fork this repo, then clone your fork locally:
+   ```bash
+   git clone https://github.com/<your-username>/chip8_emulator_cpp.git
+   cd chip8_emulator_cpp
+    ```
+2. **Build**
+    ```bash
+    g++ main.cpp chip8.cpp -o chip8.exe -IC:\SDL2-2.32.8\x86_64-w64-mingw32\include -LC:\SDL2-2.32.8\x86_64-w64-mingw32\lib -lmingw32 -lSDL2main -lSDL2
+    ```
+3. **Copy the SDL2 Runtime DLL**
+    After building, copy SDL2.dll next to your chip8.exe
 
-## To run a CHIP-8 ROM:
+4. **Place a ROM in roms/**
+    Make sure you have a ROM in roms/:
+    
+5. **Run with a Relative Path**
+    From the project root (where chip8.exe is), launch:
+    ```bash
+    .\chip8.exe .\roms\"NameofRom".ch8
+    ```
 
-```
-./chip8 path/to/ROM.ch8
-```
 ## Keyboard Mapping:
 ```
 Original  | Keyboard
