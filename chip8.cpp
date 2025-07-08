@@ -386,19 +386,16 @@ void Chip8::OP_FX29(){
 
 void Chip8::OP_FX33() {
     uint8_t X = (opcode & 0x0F00) >> 8;
-    uint8_t value = V[X];  // Do not modify V[X]
+    uint8_t value = V[X];  // Make a copy so we don't modify V[X]
 
-    memory[index_register]     = value / 100;             // Hundreds
-    memory[index_register + 1] = (value / 10) % 10;       // Tens
-    memory[index_register + 2] = value % 10;              // Ones
+    // Store the hundreds digit
+    memory[index_register] = value / 100;
 
-    // Debug output
-    std::cout << "FX33: BCD of V[" << +X << "] = " << +value
-              << " -> ["
-              << +memory[index_register] << ", "
-              << +memory[index_register + 1] << ", "
-              << +memory[index_register + 2] << "]"
-              << std::endl;
+    // Store the tens digit
+    memory[index_register + 1] = (value / 10) % 10;
+
+    // Store the ones digit
+    memory[index_register + 2] = value % 10;
 }
 
 void Chip8::OP_FX55(){
